@@ -133,6 +133,12 @@ if __name__ == "__main__":
         brand_identity = generate_brand_identity(brief_data)
         print("====== 생성 결과 ======")
         print(json.dumps(brand_identity, indent=2, ensure_ascii=False))
+        
+        # 결과를 brand_result.json 파일로 저장합니다.
+        result_path = "brand_result.json"
+        with open(result_path, "w", encoding="utf-8") as f:
+            json.dump(brand_identity, f, indent=2, ensure_ascii=False)
+        print(f"\n성공적으로 '{result_path}' 파일에 결과를 저장했습니다.")
     except Exception as e:
         print(f"에러가 발생했습니다: {e}")
         print("\n[알림] API 키를 설정하지 않았다면 프로젝트 루트 폴더에 '.env' 파일을 생성하고")

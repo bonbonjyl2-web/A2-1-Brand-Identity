@@ -1,0 +1,37 @@
+{
+  "names": [
+    "EcoLuxe",
+    "PureBloom",
+    "GreenAura",
+    "NaturaViva",
+    "SustainGlow"
+  ],
+  "slogans": [
+    "Embrace Nature, Embrace You",
+    "Pure Beauty for a Greener Tomorrow",
+    "Elevate Your Skin with Nature's Best"
+  ],
+  "story": "우리 브랜드는 자연의 선물인 순수한 원료로 만들어진 친환경 화장품을 제공합니다. 20대와 30대 젊은 여성들이 쉽게 접할 수 있도록, 매일의 아름다움을 위해 자연에서 영감을 받은 제품을 개발했습니다. 우리는 건강과 아름다움이 조화를 이루는 삶을 지향하며, 고객이 우리의 제품을 사용함으로써 자연과의 연결을 느끼고 자신을 더욱 사랑하게 되기를 바랍니다. 우리의 제품은 그저 화장품이 아닌, 당신의 삶을 더 빛나게 하는 파트너가 될 것입니다.",
+  "colors": {
+    "primary": {
+      "name": "Leaf Green",
+      "hex": "#7BBE8C",
+      "description": "자연의 생명력을 상징하며, 신뢰감과 안정감을 주는 색상입니다."
+    },
+    "secondary": {
+      "name": "Soft Beige",
+      "hex": "#F5E3D2",
+      "description": "순수하고 깨끗한 느낌을 주며, 따뜻함과 편안함을 제공합니다."
+    },
+    "background": {
+      "name": "Cloud White",
+      "hex": "#FFFFFF",
+      "description": "깔끔하고 세련된 이미지를 연출하며, 다른 색상과 잘 어우러지는 배경 색상입니다."
+    },
+    "accent": {
+      "name": "Coral Pink",
+      "hex": "#FF6F61",
+      "description": "생동감과 활력을 주는 포인트 색상으로, 젊고 현대적인 이미지를 강화합니다."
+    }
+  }
+}
