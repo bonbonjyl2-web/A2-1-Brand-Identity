@@ -1,7 +1,7 @@
-"""브랜드 이미지(로고 3종 + 컬러 팔레트) 생성 모듈.
+"""브랜드 이미지(로고 9장 + 컬러 팔레트) 생성 모듈.
 
-- generate_logos()        : OpenAI 이미지 API로 logo_01~03.png 생성
-- generate_color_palette(): 생성된 HEX 코드로 color_palette.png를 로컬에서 렌더링
+- generate_logos()        : OpenAI 이미지 API로 브랜드명 3개 x 시안 3장 = 9장 생성
+- generate_color_palette(): 생성된 HEX 코드로 color_palette.png를 matplotlib으로 렌더링
 
 import 만으로 API가 호출되지 않도록, 모든 동작은 함수 안에 들어 있습니다.
 API 키는 코드에 하드코딩하지 않고 .env의 OPENAI_API_KEY에서만 읽습니다.
@@ -12,9 +12,15 @@ import os
 from pathlib import Path
 from typing import List, Tuple
 
+import matplotlib
+matplotlib.use("Agg")  # GUI 창을 띄우지 않고 파일로만 저장하는 백엔드
+
+import matplotlib.pyplot as plt
+from matplotlib import font_manager
+from matplotlib.patches import Rectangle
+
 from dotenv import load_dotenv
 from openai import OpenAI
-from PIL import Image, ImageDraw, ImageFont
 
 # .env 파일 불러오기
 load_dotenv()
@@ -30,12 +36,8 @@ IMAGE_QUALITY = "medium"
 LOGO_NAME_COUNT = 3
 LOGO_VARIANT_COUNT = 3
 
-# 한글 라벨 렌더링용 폰트 후보 (없으면 기본 폰트로 대체)
-FONT_CANDIDATES = [
-    r"C:\Windows\Fonts\malgun.ttf",
-    "/System/Library/Fonts/AppleSDGothicNeo.ttc",
-    "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
-]
+# 한글 라벨 렌더링용 폰트 후보 (없으면 matplotlib 기본 폰트로 대체)
+FONT_CANDIDATES = ["Malgun Gothic", "AppleGothic", "NanumGothic"]
 
 
 # =====================================================================
@@ -51,15 +53,16 @@ def _get_client() -> OpenAI:
     return OpenAI(api_key=api_key)
 
 
-def _load_font(size: int) -> ImageFont.FreeTypeFont:
-    """한글이 깨지지 않는 폰트를 찾아 로드합니다."""
-    for path in FONT_CANDIDATES:
-        if Path(path).exists():
-            try:
-                return ImageFont.truetype(path, size)
-            except OSError:
-                continue
-    return ImageFont.load_default()
+def _apply_korean_font() -> None:
+    """설치된 한글 폰트를 찾아 matplotlib 기본 폰트로 지정합니다."""
+    installed = {f.name for f in font_manager.fontManager.ttflist}
+    for name in FONT_CANDIDATES:
+        if name in installed:
+            plt.rcParams["font.family"] = name
+            break
+
+    # 한글 폰트 사용 시 마이너스 기호가 깨지는 것을 방지
+    plt.rcParams["axes.unicode_minus"] = False
 
 
 def _hex_to_rgb(hex_code: str) -> Tuple[int, int, int]:
@@ -81,19 +84,21 @@ def _text_color_for(rgb: Tuple[int, int, int]) -> Tuple[int, int, int]:
     return (0, 0, 0) if luminance > 0.6 else (255, 255, 255)
 
 
-def _extract_names(brand_result: dict) -> List[Tuple[str, str]]:
-    """brand_result에서 (브랜드명, 의미) 쌍을 최대 3개까지 뽑아냅니다.
+def _extract_names(brand_result: dict) -> List[Tuple[str, str, str]]:
+    """brand_result에서 (한글명, 영문명, 의미) 쌍을 최대 3개까지 뽑아냅니다.
 
-    명세 스키마({"name":..., "meaning":...})와 옛 스키마(문자열 배열)를 모두 지원합니다.
+    영문명이 없는 옛 결과 파일이나 문자열 배열 스키마도 그대로 지원합니다.
     """
     names = brand_result.get("names") or ["Brand"]
 
-    extracted: List[Tuple[str, str]] = []
+    extracted: List[Tuple[str, str, str]] = []
     for entry in names[:LOGO_NAME_COUNT]:
         if isinstance(entry, dict):
-            extracted.append((entry.get("name", "Brand"), entry.get("meaning", "")))
+            name_ko = entry.get("name", "Brand")
+            # 영문명이 없으면 한글명을 그대로 사용합니다.
+            extracted.append((name_ko, entry.get("name_en") or name_ko, entry.get("meaning", "")))
         else:
-            extracted.append((str(entry), ""))
+            extracted.append((str(entry), str(entry), ""))
 
     return extracted
 
@@ -118,15 +123,20 @@ def _extract_colors(brand_result: dict) -> Tuple[str, List[str]]:
     return main_color, sub_colors
 
 
-def _build_prompts_for_name(brand_name: str, meaning: str, slogan: str,
+def _build_prompts_for_name(name_ko: str, name_en: str, meaning: str, slogan: str,
                             main_color: str, sub_colors: List[str]) -> List[str]:
-    """브랜드명 하나에 대해 서로 다른 스타일의 로고 프롬프트 3개를 만듭니다."""
+    """브랜드명 하나에 대해 서로 다른 스타일의 로고 프롬프트 3개를 만듭니다.
+
+    로고에 새겨지는 글자는 판독이 안정적인 영문명을 사용하고,
+    한글명은 브랜드 정체성 정보로 프롬프트에 함께 전달합니다.
+    """
     palette = f"main color {main_color}, supporting colors {', '.join(sub_colors)}"
 
     common = f"""
-Create a professional brand logo for '{brand_name}'.
+Create a professional brand logo for '{name_en}'.
 
 Brand context:
+Korean brand name: {name_ko}
 Brand meaning: {meaning}
 Brand slogan: {slogan}
 Color palette: {palette}
@@ -147,8 +157,8 @@ No watermark.
 
     return [
         common + "\nStyle: minimal abstract symbol mark only, simple geometric shapes, generous negative space.",
-        common + f"\nStyle: elegant wordmark spelling '{brand_name}' in a refined sans-serif typeface.",
-        common + f"\nStyle: circular emblem/badge combining a simple icon with the brand name '{brand_name}'.",
+        common + f"\nStyle: elegant wordmark spelling '{name_en}' in a refined sans-serif typeface.",
+        common + f"\nStyle: circular emblem/badge combining a simple icon with the brand name '{name_en}'.",
     ]
 
 
@@ -156,16 +166,17 @@ def _build_logo_plan(brand_result: dict) -> List[Tuple[int, int, str, str]]:
     """브랜드명 3개 x 시안 3개 = 총 9장의 생성 계획을 만듭니다.
 
     Returns:
-        list[tuple]: (이름 순번, 시안 순번, 브랜드명, 프롬프트) 목록
+        list[tuple]: (이름 순번, 시안 순번, 표시용 브랜드명, 프롬프트) 목록
     """
     slogan = (brand_result.get("slogans") or [""])[0]
     main_color, sub_colors = _extract_colors(brand_result)
 
     plan: List[Tuple[int, int, str, str]] = []
-    for name_index, (brand_name, meaning) in enumerate(_extract_names(brand_result), start=1):
-        prompts = _build_prompts_for_name(brand_name, meaning, slogan, main_color, sub_colors)
+    for name_index, (name_ko, name_en, meaning) in enumerate(_extract_names(brand_result), start=1):
+        prompts = _build_prompts_for_name(name_ko, name_en, meaning, slogan, main_color, sub_colors)
+        label = f"{name_ko} ({name_en})" if name_en != name_ko else name_ko
         for variant_index, prompt in enumerate(prompts[:LOGO_VARIANT_COUNT], start=1):
-            plan.append((name_index, variant_index, brand_name, prompt))
+            plan.append((name_index, variant_index, label, prompt))
 
     return plan
 
@@ -240,7 +251,7 @@ def generate_logos(brand_result: dict, output_dir: str) -> List[str]:
 def generate_color_palette(brand_result: dict, output_dir: str) -> str:
     """브랜드 컬러(main 1 + sub 2)를 시각화한 color_palette.png를 만듭니다.
 
-    API 호출 없이 Pillow로 직접 그리기 때문에 추가 비용이 들지 않습니다.
+    API 호출 없이 matplotlib으로 직접 그리기 때문에 추가 비용이 들지 않습니다.
 
     Returns:
         str: 저장된 PNG 파일 경로 (예: "output/color_palette.png")
@@ -248,40 +259,48 @@ def generate_color_palette(brand_result: dict, output_dir: str) -> str:
     out_path = Path(output_dir)
     out_path.mkdir(parents=True, exist_ok=True)
 
-    brand_name = _extract_names(brand_result)[0][0]
+    name_ko, name_en, _ = _extract_names(brand_result)[0]
+    brand_name = f"{name_ko} ({name_en})" if name_en != name_ko else name_ko
     main_color, sub_colors = _extract_colors(brand_result)
 
     swatches = [("MAIN", main_color)]
     for i, sub_hex in enumerate(sub_colors, start=1):
         swatches.append((f"SUB {i}", sub_hex))
 
-    # 캔버스 설정
-    width, height = 1200, 520
-    header_height = 120
-    canvas = Image.new("RGB", (width, height), (255, 255, 255))
-    draw = ImageDraw.Draw(canvas)
+    _apply_korean_font()
 
-    title_font = _load_font(44)
-    label_font = _load_font(28)
-    hex_font = _load_font(34)
+    # 1200 x 520 px 캔버스 (figsize * dpi)
+    fig = plt.figure(figsize=(12, 5.2), dpi=100, facecolor="white")
+    ax = fig.add_axes([0, 0, 1, 1])
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.axis("off")
 
-    # 헤더: 브랜드명
-    draw.text((48, 40), f"{brand_name}  Color Palette", font=title_font, fill=(30, 30, 30))
+    # 헤더: 브랜드명 (상단 흰 여백 영역)
+    header_top = 0.77
+    ax.text(0.04, 0.87, f"{brand_name}  Color Palette",
+            fontsize=22, color="#1E1E1E", va="center")
 
     # 컬러 스와치를 가로로 균등 배치
-    swatch_width = width // len(swatches)
+    swatch_width = 1 / len(swatches)
     for i, (label, hex_code) in enumerate(swatches):
-        rgb = _hex_to_rgb(hex_code)
+        hex_code = str(hex_code)
         x0 = i * swatch_width
-        x1 = width if i == len(swatches) - 1 else (i + 1) * swatch_width
-        draw.rectangle([x0, header_height, x1, height], fill=rgb)
 
-        text_color = _text_color_for(rgb)
-        draw.text((x0 + 40, header_height + 60), label, font=label_font, fill=text_color)
-        draw.text((x0 + 40, header_height + 110), str(hex_code).upper(), font=hex_font, fill=text_color)
+        # HEX 형식이 깨졌을 때를 대비해 RGB로 변환한 값을 사용합니다.
+        rgb = _hex_to_rgb(hex_code)
+        face_color = tuple(channel / 255 for channel in rgb)
+        text_color = tuple(channel / 255 for channel in _text_color_for(rgb))
+
+        ax.add_patch(Rectangle((x0, 0), swatch_width, header_top,
+                               facecolor=face_color, edgecolor="none"))
+        ax.text(x0 + 0.033, 0.50, label, fontsize=14, color=text_color, va="center")
+        ax.text(x0 + 0.033, 0.38, hex_code.upper(), fontsize=17, color=text_color, va="center")
 
     file_path = out_path / "color_palette.png"
-    canvas.save(file_path, "PNG")
+    fig.savefig(file_path, format="png", facecolor=fig.get_facecolor())
+    plt.close(fig)
+
     return str(file_path)
 
 

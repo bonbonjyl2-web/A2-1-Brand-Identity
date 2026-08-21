@@ -1,11 +1,11 @@
 # 브랜드 아이덴티티 생성기 (A2-1)
 
-브랜드 브리프(JSON)를 입력하면 OpenAI API로 **브랜드명 3개 / 슬로건 3개 / 브랜드 스토리 / 컬러 팔레트**를
+브랜드 브리프(JSON)를 입력하면 OpenAI API로 **브랜드명 3개(한글+영문) / 슬로건 3개 / 브랜드 스토리 / 컬러 팔레트**를
 생성하고, 그 결과를 바탕으로 **컬러 팔레트 1장 + 로고 시안 9장**을 이미지로 만들어 주는 프로그램입니다.
 
 - 텍스트 생성: OpenAI Structured Outputs (Pydantic 스키마로 출력 형식 고정)
 - 이미지 생성: OpenAI Images API (`gpt-image-2`)
-- 컬러 팔레트: Pillow 로컬 렌더링 (API 비용 없음)
+- 컬러 팔레트: matplotlib 로컬 렌더링 (API 비용 없음)
 
 저장소: https://github.com/bonbonjyl2-web/A2-1-Brand-Identity
 
@@ -33,7 +33,7 @@ A2-1-Brand-Identity/
 Python 3.12 기준입니다.
 
 ```bash
-pip install openai python-dotenv pydantic Pillow
+pip install openai python-dotenv pydantic matplotlib
 ```
 
 ## API 키 설정
@@ -128,7 +128,7 @@ python image.py          # 저장된 brand_result.json으로 이미지만 생성
 ```json
 {
   "names": [
-    { "name": "Blooming", "meaning": "자연에서 피어나는 아름다움" }
+    { "name": "블루밍", "name_en": "Blooming", "meaning": "자연에서 피어나는 아름다움" }
   ],
   "slogans": ["일상에 자연을 담다", "피부가 숨쉬는 순간", "자연 그대로"],
   "story": "브랜드 스토리...",
@@ -138,6 +138,9 @@ python image.py          # 저장된 brand_result.json으로 이미지만 생성
   }
 }
 ```
+
+브랜드명은 한글명(`name`)과 영문명(`name_en`)이 한 쌍으로 생성됩니다.
+로고에 새겨지는 글자는 판독이 안정적인 영문명을 쓰고, 한글명은 프롬프트에 브랜드 정체성 정보로 함께 전달됩니다.
 
 `names` 3개, `slogans` 3개, `colors.sub` 2개가 항상 보장됩니다.
 Pydantic 스키마로 출력을 강제하고, 코드에서 개수를 한 번 더 잘라내기 때문입니다.
@@ -162,7 +165,7 @@ Pydantic 스키마로 출력을 강제하고, 코드에서 개수를 한 번 더
 
 ### `generate_color_palette(brand_result: dict, output_dir: str) -> str` — `image.py`
 
-- **출력**: 생성된 `color_palette.png` 경로
+- **출력**: 생성된 `color_palette.png` 경로 (matplotlib으로 1200×520px 렌더링)
 
 생성 장수를 바꾸려면 `image.py` 상단의 상수를 조정하세요.
 

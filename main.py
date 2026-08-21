@@ -56,7 +56,10 @@ def print_summary(brand_result: dict) -> None:
     """생성 결과를 콘솔에 보기 좋게 출력합니다."""
     print("\n[브랜드명 후보]")
     for index, item in enumerate(brand_result["names"], start=1):
-        print(f"  {index}. {item['name']}: {item['meaning']}")
+        # 영문명이 없는 옛 결과 파일도 그대로 출력되도록 처리
+        name_en = item.get("name_en")
+        display = f"{item['name']} ({name_en})" if name_en else item["name"]
+        print(f"  {index}. {display}: {item['meaning']}")
 
     print("\n[슬로건]")
     for slogan in brand_result["slogans"]:

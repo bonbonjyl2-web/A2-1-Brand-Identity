@@ -1,33 +1,16 @@
-# Dependencies
-node_modules/
-
-# API keys and secret files
+# API 키 (절대 커밋 금지)
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Editor directories and files
-.vscode/
-.idea/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-# OS Files
-.DS_Store
-Thumbs.db
 
 # Python 캐시
 __pycache__/
 *.pyc
+
+# 가상환경
+venv/
+.venv/
+
+# 에디터 / OS 잡파일
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

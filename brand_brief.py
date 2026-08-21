@@ -16,8 +16,9 @@ MODEL_NAME = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 # =====================================================================
 
 class BrandName(BaseModel):
-    """브랜드명 후보 하나와 그 이름에 담긴 의미"""
-    name: str = Field(description="브랜드명 후보 (예: Blooming)")
+    """브랜드명 후보 하나와 그 이름에 담긴 의미 (한글명 + 영문명)"""
+    name: str = Field(description="한글 브랜드명 후보 (예: 블루밍)")
+    name_en: str = Field(description="같은 브랜드의 영문 표기 (예: Blooming)")
     meaning: str = Field(description="이름에 담긴 의미나 유래 (예: 자연에서 피어나는 아름다움)")
 
 class BrandColors(BaseModel):
@@ -46,7 +47,7 @@ def generate_brand_text(brief: dict) -> dict:
 
     Returns:
         dict: {
-            "names": [{"name": "...", "meaning": "..."}, ...],   # 3개
+            "names": [{"name": "한글명", "name_en": "영문명", "meaning": "..."}, ...],   # 3개
             "slogans": ["...", "...", "..."],                    # 3개
             "story": "브랜드 스토리 본문...",
             "colors": {"main": "#RRGGBB", "sub": ["#RRGGBB", "#RRGGBB"]}
@@ -80,6 +81,11 @@ def generate_brand_text(brief: dict) -> dict:
     1. 브랜드명(names):
        - 정확히 3개만 생성하세요.
        - 발음하기 쉽고, 브랜드 컨셉 및 키워드를 은유적 혹은 함축적으로 나타내는 감각적인 이름이어야 합니다.
+       - 각 후보마다 한글 브랜드명(name)과 영문 브랜드명(name_en)을 함께 만들어 주세요.
+         · 두 이름은 같은 브랜드를 가리켜야 하며, 발음이나 의미가 자연스럽게 이어져야 합니다.
+           (예: 블루밍 / Blooming, 소소담 / Sosodam)
+         · 영문명은 로마자 표기만 그대로 옮긴 어색한 형태가 되지 않도록, 해외에서도 브랜드로
+           읽히는 자연스러운 표기로 다듬어 주세요.
        - 각 이름마다 그 이름에 담긴 의미(meaning)를 한 문장으로 설명해 주세요.
        - 경쟁사와 뚜렷이 구별되는 이름이어야 하며, 경쟁사 이름을 그대로 쓰지 마세요.
     2. 슬로건(slogans):
