@@ -1,9 +1,11 @@
 # 브랜드 아이덴티티 생성기 (A2-1)
 
-원
-6조: 팀장-이주연(전체구조 총괄), 지석
+------
+6조: 팀장-이주연(전체구조 총괄), 지석원( 전체 프로젝트 구조)
           조현정(텍스트 네이밍 슬로건)
-          
+          김수정(이미지 컬러 로고)
+          임유정( API 키, 결과 통합)
+----
 
 브랜드 브리프(JSON)를 입력하면 OpenAI API로 **브랜드명 3개(한글+영문) / 슬로건 3개 / 브랜드 스토리 / 컬러 팔레트**를
 생성하고, 그 결과를 바탕으로 **컬러 팔레트 1장 + 로고 시안 9장**을 이미지로 만들어 주는 프로그램입니다.
@@ -195,3 +197,47 @@ result = generate_brand_text(brief)
 palette_path = generate_color_palette(result, "output")
 logo_paths = generate_logos(result, "output")
 ```
+## 작업 로그 
+
+PS C:\Users\Administrator\Development\A2-1-Brand-Identity> git log
+commit d4157115dd4bdd5aa0e8217250ea2570f3335942 (HEAD -> main, origin/main, origin/HEAD)
+Author: dbdlf <yujeongdlek@gmail.com>
+Date:   Fri Aug 21 16:23:50 2026 +0900
+
+    chore: output 최신 생성 결과물로 갱신
+
+commit b16c341e7dceec94d678ff48fe4697437c823d29
+Author: dbdlf <yujeongdlek@gmail.com>
+Date:   Fri Aug 21 16:22:55 2026 +0900
+
+    feat: matplotlib 팔레트 렌더링, 한글+영문 브랜드명 동시 생성, gitignore 정리
+    
+    - generate_color_palette(): Pillow -> matplotlib(Agg 백엔드)로 교체
+    - BrandName 스키마에 name_en 추가, 로고 워드마크는 영문명으로 렌더링
+    - .gitignore를 Node.js용 항목 제거하고 프로젝트에 필요한 항목만 남김
+    - output/: 로고 9장(logo_NN_VV.png) 및 최신 brand_result.json 갱신
+
+commit 65196606ce4d267edeba6cd85e705652c3177609
+Author: dbdlf <yujeongdlek@gmail.com>
+Date:   Fri Aug 21 16:22:55 2026 +0900
+
+    feat: 브랜드명 3개 x 로고 시안 3장(총 9장) 생성 및 README 추가
+    
+    - generate_brand_text(brief): 브랜드명 3개 고정, {name, meaning} / {main, sub} 스키마로 변경
+    - generate_logos(brand_result, output_dir): 이름별 시안 3장씩 총 9장 생성 (logo_NN_VV.png)
+    - generate_color_palette(): Pillow로 컬러 팔레트 로컬 렌더링
+    
+    - generate_brand_text(brief): 브랜드명 3개 고정, {name, meaning} / {main, sub} 스키마로 변경
+    - generate_logos(brand_result, output_dir): 이름별 시안 3장씩 총 9장 생성 (logo_NN_VV.png)
+    - generate_color_palette(): Pillow로 컬러 팔레트 로컬 렌더링
+    - image.py를 최상위 스크립트에서 함수 모듈로 전환 (import 시 API 호출되던 문제 해결)
+    - main.py: flat 구조에 맞게 import 정리, 산출물을 output/ 폴더로 통일
+    - README.md 추가, __pycache__ 추적 해제
+
+commit c3cdb4913dc774216f4c883921a60dd7f44c6ad2
+Merge: c91a6f7 202781d
+Author: haru2014 <mickey1008@naver.com>
+Date:   Fri Aug 21 15:13:22 2026 +0900
+
+    Merge branch 'main' of https://github.com/bonbonjyl2-web/A2-1-Brand-Identity
+PS C:\Users\Administrator\Development\A2-1-Brand-Identity>            
